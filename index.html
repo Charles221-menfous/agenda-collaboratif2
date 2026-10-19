@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Collaboratif - Septembre 2026</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        .calendar {
+            display: flex;
+            flex-direction: row;      /* une semaine par colonne */
+            gap: 12px;
+            overflow-x: auto;         /* défilement horizontal */
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 10px;
+            scroll-snap-type: x mandatory;
+        }
+        .week {
+            flex: 0 0 90%;           
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-snap-align: start;
+            border: 2px solid #000000;
+            padding: 15px;
+            padding-top: 50px;
+            margin: 20px;
+            border-radius: 5px;
+        }
+        .day {
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .day-header {
+            font-weight: bold;
+            font-size: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-content {
+            font-size: 13px;
+            margin: 6px 0 4px;
+        }
+        .add-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-button:hover {
+            background-color: #45a049;
+        }
+        .devoir {
+            background-color: #e7f3fe;
+            padding: 5px;
+            margin-bottom: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            border-left: 3px solid #2196F3;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 90%;
+            max-width: 320px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px; /* évite le zoom auto sur iOS */
+        }
+        .form-group textarea {
+            height: 60px;
+            resize: none;
+        }
+        .submit-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+        .submit-button:hover {
+            background-color: #45a049;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #333;
+        }
+        .important-option {
+            color: #f44336;
+            font-weight: bold;
+        }
+
+        .matiere-francais { background-color: #0c85c137; border-left: 3px solid #0c85c1; }
+        .matiere-maths { background-color: #ffe10041; border-left: 3px solid #fffb03; }
+        .matiere-histoire-geo { background-color: #ff070742; border-left: 3px solid #ff0707; }
+        .matiere-emc { background-color: #ffffff; border-left: 3px solid #5f945d; }
+        .matiere-vie-de-classe { background-color: #f3e5f5; border-left: 3px solid #808080; }
+        .matiere-anglais { background-color: #e1f5fe; border-left: 3px solid #c55deb; }
+        .matiere-allemand { background-color: #fce4ec; border-left: 3px solid #034a07; }
+        .matiere-espagnol { background-color: #fff3e0; border-left: 3px solid #ff9800; }
+        .matiere-spe-maths { background-color: #e0f7fa; border-left: 3px solid #806a07; }
+        .matiere-spe-physique { background-color: #e8eaf6; border-left: 3px solid #170164; }
+        .matiere-spe-svt { background-color: #f1f8e9; border-left: 3px solid #3e6822; }
+        .matiere-spe-nsi { background-color: #f5f5f5; border-left: 3px solid #17336a; }
+        .matiere-spe-hggsp { background-color: #fafafa; border-left: 3px solid #9600a4; }
+        .matiere-spe-hlp { background-color: #f0f4c3; border-left: 3px solid #285246; }
+        .matiere-spe-ses { background-color: #e0f2f1; border-left: 3px solid #f03030; }
+        .matiere-spe-amc { background-color: #e1bee7; border-left: 3px solid #6f1c48; }
+        .matiere-foi-et-societe { background-color: #f3e5f5; border-left: 3px solid #000000; }
+        .matiere-important { background-color: #ffebee; border-left: 3px solid #c30000; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Agenda Collaboratif - Septembre 2026</h1>
+    <div class="calendar" id="calendar"></div>
+
+    <!-- Modale pour ajouter un devoir -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div class="modal-header">Ajouter un devoir</div>
+            <form id="devoirForm">
+                <div class="form-group">
+                    <label for="matiere">Matière :</label>
+                    <select id="matiere" required>
+                        <option value="">-- Sélectionnez --</option>
+                        <option value="Français">Français</option>
+                        <option value="Maths Complémentaires">Maths Complémentaires</option>
+                        <option value="Histoire-Géo">Histoire-Géo</option>
+                        <option value="EMC">EMC</option>
+                        <option value="Vie de classe">Vie de classe</option>
+                        <option value="Anglais">Anglais</option>
+                        <option value="Allemand">Allemand</option>
+                        <option value="Espagnol">Espagnol</option>
+                        <option value="Spé Maths">Spé Maths</option>
+                        <option value="Spé Physique">Spé Physique</option>
+                        <option value="Spé SVT">Spé SVT</option>
+                        <option value="Spé NSI">Spé NSI</option>
+                        <option value="Spé HGGSP">Spé HGGSP</option>
+                        <option value="Spé HLP">Spé HLP</option>
+                        <option value="Spé SES">Spé SES</option>
+                        <option value="Spé AMC">Spé AMC</option>
+                        <option value="Foi et société (mdr)">Foi et société (mdr)</option>
+                        <option value="IMPORTANT" class="important-option">IMPORTANT</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description du devoir :</label>
+                    <textarea id="description" required></textarea>
+                </div>
+                <button type="button" class="submit-button" onclick="addDevoir()">Ajouter</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+
+        // Toutes les semaines de septembre 2026 (du mardi 1er au mercredi 30)
+        const SEMAINES = [
+            ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04'],
+            ['2026-09-07', '2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'],
+            ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17', '2026-09-18'],
+            ['2026-09-21', '2026-09-22', '2026-09-23', '2026-09-24', '2026-09-25'],
+            ['2026-09-28', '2026-09-29', '2026-09-30']
+        ];
+
+        let currentDate = null;
+
+        function jourLabel(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            // getDay : 0=dimanche ... 6=samedi ; lundi=1
+            return JOURS[(d.getDay() + 6) % 7] + ' ' + d.getDate();
+        }
+
+        function buildCalendar() {
+            const calendar = document.getElementById('calendar');
+            SEMAINES.forEach(semaine => {
+                const week = document.createElement('div');
+                week.className = 'week';
+                semaine.forEach(date => {
+                    const day = document.createElement('div');
+                    day.className = 'day';
+                    day.dataset.date = date;
+                    const header = document.createElement('div');
+                    header.className = 'day-header';
+                    header.innerHTML = '<span></span>';
+                    header.firstChild.textContent = jourLabel(date);
+
+                    const btn = document.createElement('button');
+                    btn.className = 'add-button';
+                    btn.textContent = '+';
+                    btn.addEventListener('click', () => openModal(date));
+                    header.appendChild(btn);
+
+                    const content = document.createElement('div');
+                    content.className = 'day-content';
+
+                    day.appendChild(header);
+                    day.appendChild(content);
+                    week.appendChild(day);
+                });
+                calendar.appendChild(week);
+            });
+        }
+
+        // Mapping explicite matière -> classe CSS
+        const CLASSES = {
+            'Français': 'matiere-francais',
+            'Maths Complémentaires': 'matiere-maths',
+            'Histoire-Géo': 'matiere-histoire-geo',
+            'EMC': 'matiere-emc',
+            'Vie de classe': 'matiere-vie-de-classe',
+            'Anglais': 'matiere-anglais',
+            'Allemand': 'matiere-allemand',
+            'Espagnol': 'matiere-espagnol',
+            'Spé Maths': 'matiere-spe-maths',
+            'Spé Physique': 'matiere-spe-physique',
+            'Spé SVT': 'matiere-spe-svt',
+            'Spé NSI': 'matiere-spe-nsi',
+            'Spé Hggsp': 'matiere-spe-hggsp',
+            'Spé HGGSP': 'matiere-spe-hggsp',
+            'Spé HLP': 'matiere-spe-hlp',
+            'Spé SES': 'matiere-spe-ses',
+            'Spé AMC': 'matiere-spe-amc',
+            'Foi et société (mdr)': 'matiere-foi-et-societe',
+            'IMPORTANT': 'matiere-important'
+        };
+
+        function matiereClass(matiere) {
+            return CLASSES[matiere] || 'devoir';
+        }
+
+        function openModal(date) {
+            currentDate = date;
+            document.getElementById('modal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('matiere').value = '';
+            document.getElementById('description').value = '';
+        }
+
+        function addDevoir() {
+            const matiere = document.getElementById('matiere').value;
+            const description = document.getElementById('description').value;
+
+            if (!matiere || !description) {
+                alert('Veuillez remplir tous les champs.');
+                return;
+            }
+
+            const dayElement = document.querySelector(`[data-date="${currentDate}"] .day-content`);
+            const devoirElement = document.createElement('div');
+            devoirElement.className = 'devoir ' + matiereClass(matiere);
+            devoirElement.innerHTML = `<strong>${matiere} :</strong> ${description}`;
+            dayElement.appendChild(devoirElement);
+
+            closeModal();
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        buildCalendar();
+    </script>
+</body>
+</html>
